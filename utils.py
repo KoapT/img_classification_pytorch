@@ -83,8 +83,10 @@ def adjust_learning_rate(optimizer, lr_init, decay_rate, epoch, num_epochs,decay
             lr *= decay_rate**2
         elif epoch >= num_epochs * 0.5:
             lr *= decay_rate
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
+
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
     return lr
 
 def save_checkpoint(state, is_best, save_dir, filename='checkpoint.pth.tar'):
