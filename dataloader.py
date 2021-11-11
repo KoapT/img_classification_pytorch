@@ -157,7 +157,6 @@ if __name__ == '__main__':
 
         for data, target in loader:
             channels_sum += torch.mean(data, dim=[0, 2, 3])  # shape [n_samples(batch),channels,height,width]
-            # 并不需要求channel的均值
             channel_squared_sum += torch.mean(data ** 2,
                                               dim=[0, 2, 3])  # shape [n_samples(batch),channels,height,width]
             num_batches += 1
