@@ -4,15 +4,17 @@ import random
 import utils
 import torchvision.datasets as dset
 from torchvision import transforms as T
-from torch.utils.data import DataLoader,TensorDataset
+from torch.utils.data import DataLoader, TensorDataset
 
 
 class ImageFolder(dset.ImageFolder):
     '''
     借助TensorDataset类，将图片数据直接以tensor方式读入Dataset类中保存，常驻内存，加速后期的load
+    但是会导致在线数据增强失效。该问题暂未解决
     '''
-    def __init__(self,root, transform=None,target_transform = None,):
-        super(ImageFolder, self).__init__(root,transform=transform,
+
+    def __init__(self, root, transform=None, target_transform=None):
+        super(ImageFolder, self).__init__(root, transform=transform,
                                           target_transform=target_transform)
         img_tensor_list = []
         target_list = []
@@ -24,7 +26,7 @@ class ImageFolder(dset.ImageFolder):
                 target = self.target_transform(target)
             img_tensor_list.append(sample)
             target_list.append(target)
-        self.data = TensorDataset(torch.stack(img_tensor_list,0),torch.tensor(target_list))
+        self.data = TensorDataset(torch.stack(img_tensor_list, 0), torch.tensor(target_list))
         del img_tensor_list
         del target_list
 
@@ -72,20 +74,20 @@ def getDataloaders(data, config_of_data, splits=['train', 'val', 'test'],
         if 'train' in splits:
             train_set = ImageFolder(os.path.join(data_root, 'train_set'), transform=train_transform).data
             train_loader = DataLoader(train_set, batch_size=batch_size,
-                                       sampler=torch.utils.data.sampler.SubsetRandomSampler(
-                                           random_pick(len(train_set), r=0.1)[1]),
-                                       num_workers=num_workers, pin_memory=True, drop_last=True,
-                                       prefetch_factor=8)
+                                      sampler=torch.utils.data.sampler.SubsetRandomSampler(
+                                          random_pick(len(train_set), r=0.1)[1]),
+                                      num_workers=num_workers, pin_memory=True, drop_last=True,
+                                      prefetch_factor=8)
         if 'val' in splits:
             train_set = ImageFolder(os.path.join(data_root, 'train_set'), transform=test_transform).data
             val_loader = DataLoader(train_set, batch_size=batch_size,
-                                     sampler=random_pick(len(train_set), r=0.1)[0],
-                                     num_workers=num_workers, pin_memory=True, drop_last=False,
-                                     prefetch_factor=8)
+                                    sampler=random_pick(len(train_set), r=0.1)[0],
+                                    num_workers=num_workers, pin_memory=True, drop_last=False,
+                                    prefetch_factor=8)
         if 'test' in splits:
             test_set = dset.ImageFolder(os.path.join(data_root, 'testset_from_my_device'), transform=test_transform)
             test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False,
-                                      num_workers=num_workers, pin_memory=True)
+                                     num_workers=num_workers, pin_memory=True)
 
     return train_loader, val_loader, test_loader
 
@@ -101,33 +103,33 @@ if __name__ == '__main__':
     normalize = T.Normalize(mean=utils.imgs_mean,
                             std=utils.imgs_std)
     test_transform = T.Compose([T.ColorJitter(brightness=0.3, contrast=0.2, saturation=0.2, hue=0.2),
-                                 T.RandomRotation(degrees=180, expand=True),
-                                 T.Resize((64, 64)),
-                                 # T.RandomAffine(),
-                                 T.ToTensor(),
-                                 T.RandomErasing(p=0.3, scale=(0.02, 0.1), ratio=(0.2, 5), value='random'),
-                                 normalize])
+                                T.RandomRotation(degrees=180, expand=True),
+                                T.Resize((64, 64)),
+                                # T.RandomAffine(),
+                                T.ToTensor(),
+                                T.RandomErasing(p=0.3, scale=(0.02, 0.1), ratio=(0.2, 5), value='random'),
+                                normalize])
     data_root = 'D:\\iedownload\\Dataset\\yolov5_reclass_data_class_view\\' \
                 'guidearrow_genral-2dbox\\'
     t0 = time.time()
-    train_set = ImageFolder(os.path.join(data_root, 'train_set'), transform=test_transform)
+    train_set = ImageFolder(os.path.join(data_root, 'test_set'), transform=test_transform)
     train_set = train_set.data
-    print(train_set[1])
-    print('imgfolder time :', time.time() - t0)
-    train_loader = DataLoader(train_set, batch_size=128, shuffle=False,
-                              # sampler=random_pick(len(train_set), r=0.01)[0],
-                              num_workers=1,prefetch_factor=1,
+    # print(train_set[1])
+    # print('imgfolder time :', time.time() - t0)
+    train_loader = DataLoader(train_set, batch_size=8, shuffle=False,
+                              sampler=random_pick(len(train_set), r=0.1)[0],
+                              num_workers=6, prefetch_factor=8,
                               pin_memory=True, drop_last=False)
-    # for x, y in train_loader:
-    #     print(y)
-    print('loader time :', time.time() - t0)
-    print(train_set)
-    end = time.time()
-    for i, (inputs, targets) in enumerate(train_loader):
-        # measure data loading time
-        print(time.time() - end)
-        end = time.time()
-    print('all time:',time.time()-t0)
+    for x, y in train_loader:
+        print(y)
+    # print('loader time :', time.time() - t0)
+    # print(train_set)
+    # end = time.time()
+    # for i, (inputs, targets) in enumerate(train_loader):
+    #     # measure data loading time
+    #     print(time.time() - end)
+    #     end = time.time()
+    # print('all time:',time.time()-t0)
 
     # # calculate mean&std
     # def get_mean_std_value(loader):
